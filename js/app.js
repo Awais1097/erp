@@ -237,66 +237,39 @@ class TextileERPApp {
     }
 }
 
- // Load PouchDB with CDN fallback to local
-  function loadPouchDB() {
-    // First try CDN
-    var script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js';
-    script.onload = function() {
-      console.log('PouchDB loaded from CDN');
-    };
-    script.onerror = function() {
-      // CDN failed, load local version
-      console.log('CDN failed, loading local PouchDB');
-      var localScript = document.createElement('script');
-      localScript.src = 'js/pouchdb.min.js';
-      document.head.appendChild(localScript);
-    };
-    document.head.appendChild(script);
-  }
-
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    loadPouchDB();
     const app = new TextileERPApp();
     window.app = app;
-
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            await app.login(username, password);
-        });
-    } else {
-        console.warn('login-form not found');
-    }
-
-    const registerForm = document.getElementById('register-form');
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const password = document.getElementById('reg-password').value;
-            const confirmPassword = document.getElementById('reg-confirm-password').value;
-
-            if (password !== confirmPassword) {
-                app.showToast('Passwords do not match', 'danger');
-                return;
-            }
-
-            const userData = {
-                name: document.getElementById('reg-name').value,
-                username: document.getElementById('reg-username').value,
-                email: document.getElementById('reg-email').value,
-                password: password,
-                role: document.getElementById('reg-role').value
-            };
-
-            await app.register(userData);
-        });
-    } else {
-        console.warn('register-form not found');
-    }
+    
+    // Setup login form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        await app.login(username, password);
+    });
+    
+    // Setup register form
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const password = document.getElementById('reg-password').value;
+        const confirmPassword = document.getElementById('reg-confirm-password').value;
+        
+        if (password !== confirmPassword) {
+            app.showToast('Passwords do not match', 'danger');
+            return;
+        }
+        
+        const userData = {
+            name: document.getElementById('reg-name').value,
+            username: document.getElementById('reg-username').value,
+            email: document.getElementById('reg-email').value,
+            password: password,
+            role: document.getElementById('reg-role').value
+        };
+        
+        await app.register(userData);
+    });
 });
