@@ -322,7 +322,7 @@ class TextileERPSchema {
     async queryView(viewName, options = {}) {
         await this.waitForInit();
         try {
-            const result = await db.query(`_design/erp/_view/${viewName}`, {
+            const result = await db.query(`erp/_view/${viewName}`, {
                 include_docs: true,
                 ...options
             });

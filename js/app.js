@@ -237,8 +237,27 @@ class TextileERPApp {
     }
 }
 
+ // Load PouchDB with CDN fallback to local
+  function loadPouchDB() {
+    // First try CDN
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js';
+    script.onload = function() {
+      console.log('PouchDB loaded from CDN');
+    };
+    script.onerror = function() {
+      // CDN failed, load local version
+      console.log('CDN failed, loading local PouchDB');
+      var localScript = document.createElement('script');
+      localScript.src = 'js/pouchdb.min.js';
+      document.head.appendChild(localScript);
+    };
+    document.head.appendChild(script);
+  }
+
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    loadPouchDB();
     const app = new TextileERPApp();
     window.app = app;
 
