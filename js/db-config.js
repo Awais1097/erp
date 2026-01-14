@@ -684,7 +684,7 @@ async function initializeDatabase() {
             await schema.createDoc('setting', settings);
             
             console.log('Database initialized with sample data');
-            alert('Database initialized successfully!\n\nLogin Credentials:\nAdmin: admin/admin123\nManager: manager/manager123\nUser: user/user123');
+         //   alert('Database initialized successfully!\n\nLogin Credentials:\nAdmin: admin/admin123\nManager: manager/manager123\nUser: user/user123');
         }
     } catch (error) {
         console.error('Error initializing database:', error);
