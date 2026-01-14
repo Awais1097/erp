@@ -241,35 +241,43 @@ class TextileERPApp {
 document.addEventListener('DOMContentLoaded', () => {
     const app = new TextileERPApp();
     window.app = app;
-    
-    // Setup login form
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        await app.login(username, password);
-    });
-    
-    // Setup register form
-    document.getElementById('register-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const password = document.getElementById('reg-password').value;
-        const confirmPassword = document.getElementById('reg-confirm-password').value;
-        
-        if (password !== confirmPassword) {
-            app.showToast('Passwords do not match', 'danger');
-            return;
-        }
-        
-        const userData = {
-            name: document.getElementById('reg-name').value,
-            username: document.getElementById('reg-username').value,
-            email: document.getElementById('reg-email').value,
-            password: password,
-            role: document.getElementById('reg-role').value
-        };
-        
-        await app.register(userData);
-    });
+
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            await app.login(username, password);
+        });
+    } else {
+        console.warn('login-form not found');
+    }
+
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+
+            if (password !== confirmPassword) {
+                app.showToast('Passwords do not match', 'danger');
+                return;
+            }
+
+            const userData = {
+                name: document.getElementById('reg-name').value,
+                username: document.getElementById('reg-username').value,
+                email: document.getElementById('reg-email').value,
+                password: password,
+                role: document.getElementById('reg-role').value
+            };
+
+            await app.register(userData);
+        });
+    } else {
+        console.warn('register-form not found');
+    }
 });
