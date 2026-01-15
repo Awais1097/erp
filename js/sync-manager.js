@@ -1,92 +1,3 @@
-// // Sync Manager
-// class SyncManager {
-//     constructor() {
-//         this.remoteDB = null;
-//         this.syncHandler = null;
-//         this.isSyncing = false;
-//         this.syncStatus = 'disconnected';
-//         this.initRemoteDB();
-//     }
-
-//     initRemoteDB() {
-//         try {
-//             this.remoteDB = new PouchDB(REMOTE_COUCHDB);
-//         } catch (error) {
-//             console.error('Error initializing remote DB:', error);
-//         }
-//     }
-
-//     async setupSync() {
-//         if (!this.remoteDB) return null;
-
-//         try {
-//             if (this.syncHandler) {
-//                 this.syncHandler.cancel();
-//             }
-
-//             this.syncHandler = db.sync(this.remoteDB, {
-//                 live: true,
-//                 retry: true
-//             });
-
-//             this.syncHandler
-//                 .on('change', () => this.updateSyncStatus('syncing'))
-//                 .on('paused', () => this.updateSyncStatus('synced'))
-//                 .on('error', () => this.updateSyncStatus('error'));
-
-//             this.isSyncing = true;
-//             this.updateSyncStatus('connecting');
-//             return this.syncHandler;
-//         } catch (error) {
-//             console.error('Error setting up sync:', error);
-//             this.updateSyncStatus('error');
-//             return null;
-//         }
-//     }
-
-//     updateSyncStatus(status) {
-//         this.syncStatus = status;
-//         const statusElement = document.getElementById('sync-status');
-//         if (statusElement) {
-//             statusElement.textContent = this.getStatusText(status);
-//             statusElement.className = `badge bg-${this.getStatusColor(status)}`;
-//         }
-//     }
-
-//     getStatusText(status) {
-//         const statusMap = {
-//             'connecting': 'Connecting...',
-//             'syncing': 'Syncing...',
-//             'synced': 'Synced',
-//             'error': 'Error',
-//             'disconnected': 'Offline'
-//         };
-//         return statusMap[status] || status;
-//     }
-
-//     getStatusColor(status) {
-//         const colorMap = {
-//             'connecting': 'warning',
-//             'syncing': 'info',
-//             'synced': 'success',
-//             'error': 'danger',
-//             'disconnected': 'secondary'
-//         };
-//         return colorMap[status] || 'secondary';
-//     }
-
-//     async syncNow() {
-//         if (!this.isSyncing) {
-//             return await this.setupSync();
-//         }
-//         return this.syncHandler;
-//     }
-// }
-
-// // Initialize sync manager
-// const syncManager = new SyncManager();
-// window.syncManager = syncManager;
-
 // Enhanced Sync Manager with Git Backup
 class EnhancedSyncManager {
     constructor() {
@@ -180,40 +91,116 @@ class EnhancedSyncManager {
         }
     }
 
+    // Helper method to convert GitHub URL to API URL
+    convertToGitHubApiUrl(repoUrl) {
+        try {
+            // Remove .git suffix if present
+            let cleanUrl = repoUrl.replace('.git', '');
+            
+            // Extract owner and repo name
+            const match = cleanUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+            if (!match) {
+                throw new Error('Invalid GitHub URL format');
+            }
+            
+            const owner = match[1];
+            const repo = match[2];
+            
+            return `https://api.github.com/repos/${owner}/${repo}`;
+        } catch (error) {
+            console.error('Error converting GitHub URL:', error);
+            return null;
+        }
+    }
+
+    // Token validation method
+    async validateGitHubToken() {
+        try {
+            if (!this.gitRepoUrl || !this.gitToken) {
+                return { valid: false, error: 'GitHub URL or token not configured' };
+            }
+            
+            const apiUrl = this.convertToGitHubApiUrl(this.gitRepoUrl);
+            if (!apiUrl) {
+                return { valid: false, error: 'Invalid GitHub URL format' };
+            }
+            
+            const response = await fetch(`${apiUrl}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.gitToken}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (response.ok) {
+                const repoInfo = await response.json();
+                return { 
+                    valid: true, 
+                    repoName: repoInfo.full_name,
+                    permissions: repoInfo.permissions,
+                    defaultBranch: repoInfo.default_branch || 'main'
+                };
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                return { 
+                    valid: false, 
+                    error: `GitHub API error: ${response.status} ${response.statusText} - ${errorData.message || ''}` 
+                };
+            }
+        } catch (error) {
+            return { 
+                valid: false, 
+                error: `Connection error: ${error.message}` 
+            };
+        }
+    }
+
     // Git Backup Methods
     async setupGitBackup(gitRepoUrl, gitToken, backupIntervalMinutes = 30) {
         try {
+            // Validate GitHub token first
             this.gitRepoUrl = gitRepoUrl;
             this.gitToken = gitToken;
-            this.gitBackupEnabled = true;
             
-            // Create backup directory if it doesn't exist
-            if (!localStorage.getItem('gitBackupPath')) {
-                const backupPath = `textile-erp-backup-${Date.now()}`;
-                localStorage.setItem('gitBackupPath', backupPath);
+            console.log('Validating GitHub token...');
+            const validation = await this.validateGitHubToken();
+            console.log('Validation result:', validation);
+            
+            if (!validation.valid) {
+                throw new Error(`GitHub token validation failed: ${validation.error}`);
             }
             
+            this.gitBackupEnabled = true;
+            this.githubDefaultBranch = validation.defaultBranch;
+            
             // Set up interval backup
+            if (this.backupInterval) {
+                clearInterval(this.backupInterval);
+            }
+            
             this.backupInterval = setInterval(() => {
                 this.backupToGit();
             }, backupIntervalMinutes * 60 * 1000);
             
-            // Initial backup
-            await this.backupToGit();
-            
-            console.log('Git backup configured');
+            console.log('Git backup configured successfully');
+            this.showNotification(`Git backup configured for ${validation.repoName}`, 'success');
             return true;
         } catch (error) {
             console.error('Error setting up Git backup:', error);
+            this.showNotification('Git backup setup failed: ' + error.message, 'error');
             return false;
         }
     }
 
     async backupToGit() {
-        if (!this.gitBackupEnabled || !this.gitRepoUrl) return;
+        if (!this.gitBackupEnabled || !this.gitRepoUrl || !this.gitToken) {
+            console.log('Git backup not enabled or configured');
+            return;
+        }
         
         try {
             this.updateSyncStatus('backup_started');
+            console.log('Starting Git backup...');
             
             // 1. Export current database to JSON
             const allDocs = await schema.getAllDocs();
@@ -224,19 +211,20 @@ class EnhancedSyncManager {
                 design_docs: allDocs.filter(doc => doc._id.startsWith('_design'))
             };
             
-            // 2. Check if Git repo already has backup
-            const existingBackup = await this.checkGitForExistingBackup();
+            console.log(`Exporting ${exportData.documents.length} documents...`);
             
-            if (existingBackup) {
-                // 3. Merge changes if backup exists
-                await this.mergeAndUpload(exportData, existingBackup);
-            } else {
-                // 4. Upload initial backup
-                await this.uploadToGit(exportData);
+            // 2. Convert GitHub repo URL to API URL
+            const apiUrl = this.convertToGitHubApiUrl(this.gitRepoUrl);
+            if (!apiUrl) {
+                throw new Error('Invalid GitHub repository URL');
             }
+            
+            // 3. Upload to Git
+            await this.uploadToGit(exportData, apiUrl);
             
             this.updateSyncStatus('backup_completed');
             this.showNotification('Backup completed successfully', 'success');
+            console.log('Git backup completed successfully');
             
         } catch (error) {
             console.error('Error backing up to Git:', error);
@@ -245,120 +233,170 @@ class EnhancedSyncManager {
         }
     }
 
-    async checkGitForExistingBackup() {
+    async checkGitForExistingBackup(apiUrl) {
         try {
-            // In a real implementation, you would use GitHub API
-            // This is a simplified version
-            const response = await fetch(`${this.gitRepoUrl}/contents/database-backup.json`, {
+            if (!apiUrl) {
+                apiUrl = this.convertToGitHubApiUrl(this.gitRepoUrl);
+            }
+            
+            if (!apiUrl) {
+                return null;
+            }
+            
+            console.log('Checking for existing backup...');
+            const response = await fetch(`${apiUrl}/contents/database-backup.json`, {
+                method: 'GET',
                 headers: {
-                    'Authorization': `token ${this.gitToken}`,
+                    'Authorization': `Bearer ${this.gitToken}`,
                     'Accept': 'application/vnd.github.v3+json'
                 }
             });
             
+            console.log('Response status:', response.status);
+            
             if (response.ok) {
                 const data = await response.json();
-                const content = atob(data.content);
+                console.log('Found existing backup');
+                const content = atob(data.content.replace(/\n/g, ''));
                 return JSON.parse(content);
+            } else if (response.status === 404) {
+                console.log('No existing backup found (404)');
+                return null; // File doesn't exist yet
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('GitHub API error:', response.status, errorData);
+                // Don't throw error, just return null
+                return null;
             }
-            return null;
         } catch (error) {
-            console.log('No existing backup found or error:', error);
+            console.log('Error checking Git for existing backup:', error.message);
             return null;
         }
     }
 
-    async mergeAndUpload(currentData, existingBackup) {
+    async uploadToGit(data, apiUrl) {
         try {
-            // Create merged data
-            const mergedData = {
-                ...currentData,
-                documents: this.mergeDocuments(currentData.documents, existingBackup.documents),
-                previous_backup_date: existingBackup.export_date
-            };
-            
-            await this.uploadToGit(mergedData);
-            
-        } catch (error) {
-            console.error('Error merging data:', error);
-            throw error;
-        }
-    }
-
-    mergeDocuments(currentDocs, existingDocs) {
-        // Create a map of existing docs by _id
-        const existingMap = {};
-        existingDocs.forEach(doc => {
-            existingMap[doc._id] = doc;
-        });
-        
-        // Merge with current docs
-        const mergedDocs = [...existingDocs];
-        
-        currentDocs.forEach(currentDoc => {
-            const existingDoc = existingMap[currentDoc._id];
-            
-            if (!existingDoc) {
-                // New document
-                mergedDocs.push(currentDoc);
-            } else if (new Date(currentDoc.updated_at) > new Date(existingDoc.updated_at)) {
-                // Current document is newer, replace
-                const index = mergedDocs.findIndex(doc => doc._id === currentDoc._id);
-                if (index !== -1) {
-                    mergedDocs[index] = currentDoc;
-                }
+            if (!apiUrl) {
+                apiUrl = this.convertToGitHubApiUrl(this.gitRepoUrl);
             }
-        });
-        
-        return mergedDocs;
-    }
-
-    async uploadToGit(data) {
-        try {
+            
+            if (!apiUrl) {
+                throw new Error('Invalid GitHub repository URL');
+            }
+            
             const content = btoa(JSON.stringify(data, null, 2));
-            const filename = `database-backup-${new Date().toISOString().split('T')[0]}.json`;
+            const filename = 'database-backup.json';
+            const commitMessage = `Database backup ${new Date().toISOString()}`;
             
-            const payload = {
-                message: `Database backup ${new Date().toISOString()}`,
-                content: content,
-                branch: 'main'
-            };
+            console.log('Uploading to GitHub...');
+            console.log('API URL:', apiUrl);
+            console.log('Filename:', filename);
             
-            // Check if file exists to update or create
-            const existingFile = await this.checkGitForExistingBackup();
-            if (existingFile) {
-                // Get SHA of existing file
-                const fileInfo = await fetch(`${this.gitRepoUrl}/contents/database-backup.json`, {
+            // First, check if file exists
+            let sha = null;
+            try {
+                const fileCheck = await fetch(`${apiUrl}/contents/${filename}`, {
                     headers: {
-                        'Authorization': `token ${this.gitToken}`,
+                        'Authorization': `Bearer ${this.gitToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
                 
-                if (fileInfo.ok) {
-                    const fileData = await fileInfo.json();
-                    payload.sha = fileData.sha;
+                if (fileCheck.ok) {
+                    const fileData = await fileCheck.json();
+                    sha = fileData.sha;
+                    console.log('Found existing file, SHA:', sha);
+                } else if (fileCheck.status === 404) {
+                    console.log('File does not exist yet, will create new');
+                } else {
+                    console.error('Error checking file:', fileCheck.status);
                 }
+            } catch (error) {
+                console.log('Error checking file, will try to create:', error.message);
             }
             
-            const response = await fetch(`${this.gitRepoUrl}/contents/database-backup.json`, {
+            const payload = {
+                message: commitMessage,
+                content: content,
+                branch: this.githubDefaultBranch || 'main'
+            };
+            
+            if (sha) {
+                payload.sha = sha;
+            }
+            
+            console.log('Upload payload prepared');
+            
+            const response = await fetch(`${apiUrl}/contents/${filename}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `token ${this.gitToken}`,
+                    'Authorization': `Bearer ${this.gitToken}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/vnd.github.v3+json'
                 },
                 body: JSON.stringify(payload)
             });
             
+            console.log('Upload response status:', response.status);
+            
             if (!response.ok) {
-                throw new Error('Failed to upload to Git');
+                const errorData = await response.json().catch(() => ({}));
+                console.error('GitHub API error response:', errorData);
+                
+                let errorMessage = `Failed to upload to Git: ${response.status} ${response.statusText}`;
+                if (errorData.message) {
+                    errorMessage += ` - ${errorData.message}`;
+                }
+                
+                // Provide more specific guidance based on error
+                if (response.status === 403) {
+                    errorMessage += '\n\nPossible issues:';
+                    errorMessage += '\n1. Token might not have "repo" scope';
+                    errorMessage += '\n2. Repository might be private and token needs access';
+                    errorMessage += '\n3. Repository might not exist or you lack write permissions';
+                } else if (response.status === 404) {
+                    errorMessage += '\n\nPossible issues:';
+                    errorMessage += '\n1. Repository might not exist';
+                    errorMessage += '\n2. Incorrect repository URL';
+                    errorMessage += '\n3. Repository might be private and token lacks access';
+                }
+                
+                throw new Error(errorMessage);
             }
             
-            console.log('Backup uploaded to Git');
+            const result = await response.json();
+            console.log('Backup uploaded to Git successfully:', result.content?.sha);
             
         } catch (error) {
             console.error('Error uploading to Git:', error);
+            throw error;
+        }
+    }
+
+    async downloadFromGit() {
+        try {
+            const apiUrl = this.convertToGitHubApiUrl(this.gitRepoUrl);
+            if (!apiUrl) {
+                throw new Error('Invalid GitHub repository URL');
+            }
+            
+            const response = await fetch(`${apiUrl}/contents/database-backup.json`, {
+                headers: {
+                    'Authorization': `Bearer ${this.gitToken}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const content = atob(data.content.replace(/\n/g, ''));
+                return JSON.parse(content);
+            }
+            
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Failed to download backup: ${response.status} ${response.statusText} - ${errorData.message || ''}`);
+        } catch (error) {
+            console.error('Error downloading from Git:', error);
             throw error;
         }
     }
@@ -405,34 +443,47 @@ class EnhancedSyncManager {
         }
     }
 
-    async downloadFromGit() {
-        try {
-            const response = await fetch(`${this.gitRepoUrl}/contents/database-backup.json`, {
-                headers: {
-                    'Authorization': `token ${this.gitToken}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const content = atob(data.content);
-                return JSON.parse(content);
-            }
-            throw new Error('Failed to download backup');
-        } catch (error) {
-            console.error('Error downloading from Git:', error);
-            throw error;
-        }
-    }
-
     async manualBackup() {
+        console.log('Manual backup triggered');
         await this.backupToGit();
     }
 
     async manualRestore() {
         if (confirm('Are you sure you want to restore from Git backup? This will replace all local data.')) {
             await this.restoreFromGit();
+        }
+    }
+
+    async testGitConnection() {
+        try {
+            if (!this.gitRepoUrl || !this.gitToken) {
+                return { 
+                    success: false, 
+                    message: 'GitHub URL or token not configured' 
+                };
+            }
+            
+            console.log('Testing GitHub connection...');
+            const validation = await this.validateGitHubToken();
+            
+            if (validation.valid) {
+                return { 
+                    success: true, 
+                    message: `Connected to ${validation.repoName} successfully!`,
+                    details: validation
+                };
+            } else {
+                return { 
+                    success: false, 
+                    message: `Connection failed: ${validation.error}`,
+                    details: validation
+                };
+            }
+        } catch (error) {
+            return { 
+                success: false, 
+                message: `Test failed: ${error.message}` 
+            };
         }
     }
 
@@ -696,129 +747,5 @@ if (enableAutoSync) {
 
 // Add Git configuration function
 window.configureGitBackup = function(repoUrl, token, intervalMinutes = 30) {
-    syncManager.setupGitBackup(repoUrl, token, intervalMinutes);
+    return syncManager.setupGitBackup(repoUrl, token, intervalMinutes);
 };
-
-// Add configuration UI function
-window.showSyncConfig = function() {
-    const currentRepo = localStorage.getItem('gitRepoUrl') || '';
-    const currentToken = localStorage.getItem('gitToken') || '';
-    const interval = localStorage.getItem('backupInterval') || '30';
-    
-    const configHtml = `
-        <div class="modal fade" id="syncConfigModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Sync Configuration</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">GitHub Repository URL</label>
-                            <input type="text" class="form-control" id="gitRepoUrl" 
-                                   value="${currentRepo}" 
-                                   placeholder="https://github.com/username/repo">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">GitHub Token</label>
-                            <input type="password" class="form-control" id="gitToken" 
-                                   value="${currentToken}" 
-                                   placeholder="GitHub personal access token">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Backup Interval (minutes)</label>
-                            <input type="number" class="form-control" id="backupInterval" 
-                                   value="${interval}" min="5" max="1440">
-                        </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="enableAutoSync" 
-                                   ${enableAutoSync ? 'checked' : ''}>
-                            <label class="form-check-label">Enable auto-sync with CouchDB</label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="saveSyncConfig()">Save</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Remove existing modal if any
-    const existingModal = document.getElementById('syncConfigModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
-    document.body.insertAdjacentHTML('beforeend', configHtml);
-    
-    const modal = new bootstrap.Modal(document.getElementById('syncConfigModal'));
-    modal.show();
-};
-
-window.saveSyncConfig = function() {
-    const repoUrl = document.getElementById('gitRepoUrl').value;
-    const token = document.getElementById('gitToken').value;
-    const interval = document.getElementById('backupInterval').value;
-    const enableAutoSync = document.getElementById('enableAutoSync').checked;
-    
-    // Save to localStorage
-    if (repoUrl) localStorage.setItem('gitRepoUrl', repoUrl);
-    if (token) localStorage.setItem('gitToken', token);
-    localStorage.setItem('backupInterval', interval);
-    localStorage.setItem('enableAutoSync', enableAutoSync.toString());
-    
-    // Configure sync manager
-    if (repoUrl && token) {
-        syncManager.setupGitBackup(repoUrl, token, parseInt(interval));
-    }
-    
-    if (enableAutoSync) {
-        syncManager.setupCouchDBSync();
-    } else {
-        syncManager.stopSync();
-    }
-    
-    bootstrap.Modal.getInstance(document.getElementById('syncConfigModal')).hide();
-    syncManager.showNotification('Sync configuration saved', 'success');
-};
-
-// Add to existing initialization
-async function initializeDatabase() {
-    try {
-        await schema.waitForInit();
-        
-        // Check existing settings for sync configuration
-        const settings = await schema.findDocs('setting');
-        const generalSettings = settings.find(s => s.setting_type === 'general') || {};
-        
-        if (generalSettings.enable_auto_sync) {
-            syncManager.setupCouchDBSync();
-        }
-        
-        // Check for Git configuration
-        const gitRepoUrl = localStorage.getItem('gitRepoUrl');
-        const gitToken = localStorage.getItem('gitToken');
-        const backupInterval = localStorage.getItem('backupInterval') || '30';
-        
-        if (gitRepoUrl && gitToken) {
-            syncManager.setupGitBackup(gitRepoUrl, gitToken, parseInt(backupInterval));
-        }
-        
-        // Rest of your existing initialization code...
-        // [Keep all your existing initializeDatabase code here]
-        
-    } catch (error) {
-        console.error('Error initializing database:', error);
-    }
-}
-
-// Add sync manager to schema for easy access
-schema.syncManager = syncManager;
-
-// Export for use in other modules
-window.schema = schema;
-window.db = db;
-window.syncManager = syncManager;
