@@ -1,5 +1,5 @@
 {
-  "export_date": "2026-01-15T12:07:43.410Z",
+  "export_date": "2026-01-15T12:10:53.339Z",
   "schema_version": "1.0",
   "documents": [
     {
@@ -1088,6 +1088,44 @@
       "_rev": "1-66f5a2ba3b878cf718c463d30b4672f5"
     },
     {
+      "type": "setting",
+      "setting_type": "general",
+      "company_name": "Textile ERP System",
+      "default_currency": "INR",
+      "lot_prefix": "LOT",
+      "purchase_prefix": "PUR",
+      "invoice_prefix": "INV",
+      "default_dying_cost": 15,
+      "default_packing_cost": 10,
+      "low_stock_threshold": 100,
+      "enable_auto_sync": true,
+      "enable_email_alerts": false,
+      "created_at": "2026-01-15T12:10:06.483Z",
+      "updated_at": "2026-01-15T12:10:06.483Z",
+      "created_by": "system",
+      "_id": "setting_1768479006483_v6flz1klm",
+      "_rev": "1-995dad145e9e82325c7df1ae2f17edfd"
+    },
+    {
+      "type": "setting",
+      "setting_type": "general",
+      "company_name": "Textile ERP System",
+      "default_currency": "INR",
+      "lot_prefix": "LOT",
+      "purchase_prefix": "PUR",
+      "invoice_prefix": "INV",
+      "default_dying_cost": 15,
+      "default_packing_cost": 10,
+      "low_stock_threshold": 100,
+      "enable_auto_sync": true,
+      "enable_email_alerts": false,
+      "created_at": "2026-01-15T12:10:22.799Z",
+      "updated_at": "2026-01-15T12:10:22.799Z",
+      "created_by": "system",
+      "_id": "setting_1768479022799_u39hiusn8",
+      "_rev": "1-5599f1832b63ed67c513950a380e055a"
+    },
+    {
       "lot_id": "lot_1768212485143_1yvxd4b11",
       "from_stage": "supplier",
       "to_stage": "gray",
@@ -1482,50 +1520,50 @@
     {
       "views": {
         "users_by_username": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'user') {\r\n                            emit(doc.username, {\r\n                                _id: doc._id,\r\n                                username: doc.username,\r\n                                name: doc.name,\r\n                                role: doc.role,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'user') {\r\n                            emit(doc.username, {\r\n                                _id: doc._id,\r\n                                username: doc.username,\r\n                                name: doc.name,\r\n                                role: doc.role,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
         },
         "accounts_by_type": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'account') {\r\n                            emit([doc.account_type, doc.account_name], {\r\n                                _id: doc._id,\r\n                                account_name: doc.account_name,\r\n                                account_type: doc.account_type,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'account') {\r\n                            emit([doc.account_type, doc.account_name], {\r\n                                _id: doc._id,\r\n                                account_name: doc.account_name,\r\n                                account_type: doc.account_type,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
         },
         "lots_by_stage": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'lot') {\r\n                            emit([doc.current_stage, doc.status], {\r\n                                _id: doc._id,\r\n                                lot_number: doc.lot_number,\r\n                                current_stage: doc.current_stage,\r\n                                current_qty: doc.current_qty,\r\n                                uom: doc.uom,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'lot') {\r\n                            emit([doc.current_stage, doc.status], {\r\n                                _id: doc._id,\r\n                                lot_number: doc.lot_number,\r\n                                current_stage: doc.current_stage,\r\n                                current_qty: doc.current_qty,\r\n                                uom: doc.uom,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
         },
         "products_by_category": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'product') {\r\n                            emit(doc.category, {\r\n                                _id: doc._id,\r\n                                product_name: doc.product_name,\r\n                                category: doc.category,\r\n                                uom: doc.uom\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'product') {\r\n                            emit(doc.category, {\r\n                                _id: doc._id,\r\n                                product_name: doc.product_name,\r\n                                category: doc.category,\r\n                                uom: doc.uom\r\n                            });\r\n                        }\r\n                    }"
         },
         "purchases_by_status": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'purchase') {\r\n                            emit([doc.status, doc.purchase_date], {\r\n                                _id: doc._id,\r\n                                purchase_number: doc.purchase_number,\r\n                                supplier_account_id: doc.supplier_account_id,\r\n                                total_amount: doc.total_amount,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'purchase') {\r\n                            emit([doc.status, doc.purchase_date], {\r\n                                _id: doc._id,\r\n                                purchase_number: doc.purchase_number,\r\n                                supplier_account_id: doc.supplier_account_id,\r\n                                total_amount: doc.total_amount,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
         },
         "process_orders_by_type": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'process_order') {\r\n                            emit([doc.process_type, doc.status, doc.process_date], {\r\n                                _id: doc._id,\r\n                                process_number: doc.process_number,\r\n                                process_type: doc.process_type,\r\n                                lot_id: doc.lot_id,\r\n                                status: doc.status,\r\n                                total_cost: doc.total_cost\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'process_order') {\r\n                            emit([doc.process_type, doc.status, doc.process_date], {\r\n                                _id: doc._id,\r\n                                process_number: doc.process_number,\r\n                                process_type: doc.process_type,\r\n                                lot_id: doc.lot_id,\r\n                                status: doc.status,\r\n                                total_cost: doc.total_cost\r\n                            });\r\n                        }\r\n                    }"
         },
         "sales_by_buyer": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'sale') {\r\n                            emit([doc.buyer_account_id, doc.sale_date], {\r\n                                _id: doc._id,\r\n                                invoice_number: doc.invoice_number,\r\n                                total_amount: doc.total_amount,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'sale') {\r\n                            emit([doc.buyer_account_id, doc.sale_date], {\r\n                                _id: doc._id,\r\n                                invoice_number: doc.invoice_number,\r\n                                total_amount: doc.total_amount,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
         },
         "vouchers_by_type": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'voucher') {\r\n                            emit([doc.voucher_type, doc.voucher_date], {\r\n                                _id: doc._id,\r\n                                voucher_number: doc.voucher_number,\r\n                                total_amount: doc.total_amount,\r\n                                created_by: doc.created_by\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'voucher') {\r\n                            emit([doc.voucher_type, doc.voucher_date], {\r\n                                _id: doc._id,\r\n                                voucher_number: doc.voucher_number,\r\n                                total_amount: doc.total_amount,\r\n                                created_by: doc.created_by\r\n                            });\r\n                        }\r\n                    }"
         },
         "lot_costs_by_type": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'lot_cost') {\r\n                            emit([doc.lot_id, doc.cost_type], {\r\n                                _id: doc._id,\r\n                                cost_type: doc.cost_type,\r\n                                total_cost: doc.total_cost\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'lot_cost') {\r\n                            emit([doc.lot_id, doc.cost_type], {\r\n                                _id: doc._id,\r\n                                cost_type: doc.cost_type,\r\n                                total_cost: doc.total_cost\r\n                            });\r\n                        }\r\n                    }"
         },
         "stock_movements_by_lot": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'stock_movement') {\r\n                            emit([doc.lot_id, doc.movement_date], {\r\n                                _id: doc._id,\r\n                                from_stage: doc.from_stage,\r\n                                to_stage: doc.to_stage,\r\n                                qty: doc.qty,\r\n                                reference_type: doc.reference_type\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'stock_movement') {\r\n                            emit([doc.lot_id, doc.movement_date], {\r\n                                _id: doc._id,\r\n                                from_stage: doc.from_stage,\r\n                                to_stage: doc.to_stage,\r\n                                qty: doc.qty,\r\n                                reference_type: doc.reference_type\r\n                            });\r\n                        }\r\n                    }"
         },
         "gray_rejects_by_status": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'gray_reject') {\r\n                            emit([doc.status, doc.reject_date], {\r\n                                _id: doc._id,\r\n                                reject_number: doc.reject_number,\r\n                                purchase_id: doc.purchase_id,\r\n                                rejected_qty: doc.rejected_qty,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'gray_reject') {\r\n                            emit([doc.status, doc.reject_date], {\r\n                                _id: doc._id,\r\n                                reject_number: doc.reject_number,\r\n                                purchase_id: doc.purchase_id,\r\n                                rejected_qty: doc.rejected_qty,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
         },
         "employees_by_status": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'employee') {\r\n                            emit([doc.status, doc.department], {\r\n                                _id: doc._id,\r\n                                employee_name: doc.employee_name,\r\n                                department: doc.department,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'employee') {\r\n                            emit([doc.status, doc.department], {\r\n                                _id: doc._id,\r\n                                employee_name: doc.employee_name,\r\n                                department: doc.department,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
         },
         "salaries_by_month": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'salary') {\r\n                            emit([doc.employee_id, doc.month], {\r\n                                _id: doc._id,\r\n                                employee_id: doc.employee_id,\r\n                                month: doc.month,\r\n                                amount: doc.amount,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'salary') {\r\n                            emit([doc.employee_id, doc.month], {\r\n                                _id: doc._id,\r\n                                employee_id: doc.employee_id,\r\n                                month: doc.month,\r\n                                amount: doc.amount,\r\n                                status: doc.status\r\n                            });\r\n                        }\r\n                    }"
         },
         "settings_by_type": {
-          "map": "function(doc) {\r\n                        if (doc.type === 'setting') {\r\n                            emit(doc.setting_type || 'general', {\r\n                                _id: doc._id,\r\n                                setting_type: doc.setting_type,\r\n                                updated_at: doc.updated_at\r\n                            });\r\n                        }\r\n                    }"
+          "map": "function (doc) {\r\n                        if (doc.type === 'setting') {\r\n                            emit(doc.setting_type || 'general', {\r\n                                _id: doc._id,\r\n                                setting_type: doc.setting_type,\r\n                                updated_at: doc.updated_at\r\n                            });\r\n                        }\r\n                    }"
         }
       },
       "_id": "_design/erp",
-      "_rev": "30-8009c55aba9fd789e130be50257b0515"
+      "_rev": "31-da4db23ee5146e91a642a04dfdab5309"
     }
   ]
 }
